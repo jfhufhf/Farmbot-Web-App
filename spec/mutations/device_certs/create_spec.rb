@@ -3,7 +3,7 @@ require "spec_helper"
 describe DeviceCerts::Create do
   let(:device) { FactoryBot.create(:device) }
   ser  = "123"
-  tags = ["x"]
+  tags = ["x:y"]
 
   it "creates a cert" do
     run_jobs_now do
@@ -33,7 +33,7 @@ describe DeviceCerts::Create do
       result = DeviceCerts::Create.run!(tags:          tags,
                                         device:        device,
                                         serial_number: ser)
-      expect(result).to eq({})
+      expect(result).to eq(device)
     end
   end
 end

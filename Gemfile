@@ -1,5 +1,5 @@
 source "https://rubygems.org"
-ruby "~> 2.5.0"
+ruby "~> 2.6.3"
 
 gem "active_model_serializers"
 gem "bunny"
@@ -24,11 +24,9 @@ gem "request_store"
 gem "rollbar"
 gem "scenic"
 gem "secure_headers"
-gem "appsignal"
 gem "skylight"
 gem "tzinfo" # For validation of user selected timezone names
 gem "valid_url"
-gem "webpack-rails"
 gem "rabbitmq_http_api_client"
 gem "zero_downtime_migrations"
 gem "redis", "~> 4.0"

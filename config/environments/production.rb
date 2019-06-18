@@ -2,7 +2,7 @@ FarmBot::Application.configure do
 
   config
     .action_mailer
-    .default_url_options = { host: ENV.fetch("API_HOST", "my.farmbot.io") }
+    .default_url_options = { host: ENV.fetch("API_HOST", "my.farm.bot") }
   config.active_support.deprecation  = :notify
   config.cache_classes               = true
   config.consider_all_requests_local = false
@@ -13,7 +13,7 @@ FarmBot::Application.configure do
   config.log_level                   = :info
   config.perform_caching             = false
   config.public_file_server.enabled  = false
-
+  config.serve_static_assets         = true
   # HACK AHEAD! Here's why:
   # 1. FarmBot Inc. Uses Sendgrid for email.
   # 2. FarmBot is an open source project that must be vendor neutral.

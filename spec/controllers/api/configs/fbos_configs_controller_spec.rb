@@ -15,7 +15,7 @@ describe Api::FbosConfigsController do
       expect(response.status).to eq(200)
       {
         device_id:               device.id,
-        auto_sync:               false,
+        auto_sync:               true,
         beta_opt_in:             false,
         disable_factory_reset:   false,
         firmware_input_log:      false,
@@ -26,13 +26,14 @@ describe Api::FbosConfigsController do
         arduino_debug_messages:  false,
         network_not_found_timer: nil,
         os_auto_update:          true,
-        firmware_hardware:       "arduino",
+        firmware_hardware:       nil,
         api_migrated:            true
       }.to_a.map do |key, value|
-        actual   = json[key]
+        actual   = json.fetch(key)
         expected = value
         correct  = actual == expected
-        fail "#{key} should be #{expected} but got #{actual}" unless correct
+        friendly_actual_var = actual|| "nil or false"
+        fail "#{key} should be #{expected} but got #{friendly_actual_var}" unless correct
       end
 
       { created_at: String, updated_at: String }
@@ -41,7 +42,7 @@ describe Api::FbosConfigsController do
   end
 
   describe '#update' do
-    it 'raise integer overflow erorrs' do
+    it 'raise integer overflow errors' do
       way_too_big = 123456789013333333332345
       sign_in user
       body = { network_not_found_timer: way_too_big }

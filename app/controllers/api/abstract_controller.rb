@@ -1,20 +1,31 @@
+require "./app/lib/celery_script/checker"
+
 module Api
   # A controller that contains all of the helper methods and shared logic for
   # all API endpoints.
   class AbstractController < ApplicationController
     # This error is thrown when you try to use a non-JSON request body on an
     # endpoint that requires JSON.
-    class OnlyJson < Exception; end;
-    CONSENT_REQUIRED = \
+    class OnlyJson < Exception; end
+
+    CONSENT_REQUIRED =
       "all device users must agree to terms of service."
-    NOT_JSON         = "That request was not valid JSON. Consider checking the"\
-                        " request body with a JSON validator.."
+    NOT_JSON = "That request was not valid JSON. Consider checking the" \
+    " request body with a JSON validator.."
+    NULL = Gem::Version.new("0.0.0")
+    NOT_FBOS = Gem::Version.new("999.999.999")
+
     respond_to :json
+    before_action :raw_json, only: [:update, :create]
     before_action :check_fbos_version
     before_action :set_default_stuff
     before_action :authenticate_user!
     skip_before_action :verify_authenticity_token
     after_action :skip_set_cookies_header
+
+    rescue_from(CeleryScript::TypeCheckError) do |err|
+      sorry err.message, 422
+    end
 
     rescue_from(ActionController::RoutingError) { sorry "Not found", 404 }
     rescue_from(User::AlreadyVerified) { sorry "Already verified.", 409 }
@@ -31,8 +42,11 @@ module Api
       sorry "You can't perform that action. #{exc.message}", 403
     end
 
+    ONLY_JSON = "This is a JSON API. "\
+    "Please use a _valid_ JSON object or array. " \
+    "Validate JSON objects at https://jsonlint.com/"
     rescue_from OnlyJson do |e|
-      sorry "This is a JSON API. Please use _valid_ JSON.", 422
+      sorry ONLY_JSON, 422
     end
 
     rescue_from Errors::NoBot do |exc|
@@ -44,11 +58,11 @@ module Api
     end
 
     rescue_from ActiveRecord::RecordInvalid do |exc|
-      render json: {error: exc.message}, status: 422
+      render json: { error: exc.message }, status: 422
     end
 
     rescue_from Errors::LegalConsent do |exc|
-      render json: {error: CONSENT_REQUIRED}, status: 451
+      render json: { error: CONSENT_REQUIRED }, status: 451
     end
 
     rescue_from ActiveModel::RangeError do |_|
@@ -57,10 +71,10 @@ module Api
     end
 
     def default_serializer_options
-      {root: false, user: current_user}
+      { root: false, user: current_user }
     end
 
-private
+    private
 
     def clean_expired_farm_events
       FarmEvents::CleanExpired.run!(device: current_device)
@@ -70,25 +84,24 @@ private
     # Our API does not do things the "Rails way" (we use Mutations for input
     # sanitation) so we can ignore this and grab the raw input.
     def raw_json
-      @raw_json ||= JSON.parse(request.body.read).tap{ |x| symbolize(x) }
+      @raw_json ||= parse_json
     rescue JSON::ParserError
       raise OnlyJson
     end
 
-    # PROBLEM: We want to deep_symbolize_keys! on all JSON inputs, but what if
-    # the user POSTs an Array? It will crash because [] does not respond_to
-    # deep_symbolize_keys! This is the workaround. I could probably use a
-    # refinement.
-    def symbolize(x)
-      x.is_a?(Array) ? x.map(&:deep_symbolize_keys!) : x.deep_symbolize_keys!
+    def parse_json
+      body = request.body.read
+      json = body.present? ? JSON.parse(body, symbolize_names: true) : nil
+      raise OnlyJson unless json.is_a?(Hash) || json.is_a?(Array)
+      json
     end
 
     REQ_ID = "X-Farmbot-Rpc-Id"
 
     def set_default_stuff
-      request.format                 = "json"
-      id                             = request.headers[REQ_ID] || SecureRandom.uuid
-      response.headers[REQ_ID]       = id
+      request.format = "json"
+      id = request.headers[REQ_ID] || SecureRandom.uuid
+      response.headers[REQ_ID] = id
       # # IMPORTANT: We need to hoist X-Farmbot-Rpc-Id to a global so that it is
       # #            accessible for use with auto_sync.
       Transport.current.set_current_request_id(response.headers[REQ_ID])
@@ -106,7 +119,7 @@ private
     def authenticate_user!
       # All possible information that could be needed for any of the 3 auth
       # strategies.
-      context = { jwt:  request.headers["Authorization"],
+      context = { jwt: request.headers["Authorization"],
                   user: current_user }
       # Returns a symbol representing the appropriate auth strategy, or nil if
       # unknown.
@@ -126,12 +139,12 @@ private
       mark_as_seen
     rescue Mutations::ValidationException => e
       errors = e.errors.message.merge(strategy: strategy)
-      render json: {error: errors}, status: 401
+      render json: { error: errors }, status: 401
     end
 
     def auth_err
       sorry("You failed to authenticate with the API. Ensure that you " \
-            " provide a JSON Web Token in the `Authorization:` header." , 401)
+            " provide a JSON Web Token in the `Authorization:` header.", 401)
     end
 
     def sorry(msg, status)
@@ -147,7 +160,7 @@ private
     end
 
     def bad_version
-      render json: {error: "Upgrade to latest FarmBot OS"}, status: 426
+      render json: { error: "Upgrade to latest FarmBot OS" }, status: 426
     end
 
     EXPECTED_VER = Gem::Version::new GlobalConfig.dump["MINIMUM_FBOS_VERSION"]
@@ -159,19 +172,19 @@ private
       # Attempt 1:
       #   The device is using an HTTP client that does not provide a user-agent.
       #   We will assume this is an old FBOS version and set it to 0.0.0
-      return CalculateUpgrade::NULL if ua == FbosDetector::NO_UA_FOUND
+      return NOT_FBOS if ua == FbosDetector::NO_UA_FOUND
 
       # Attempt 2:
       #   If the user agent was missing, we would have returned by now.
       #   If the UA includes FbosDetector::FARMBOT_UA_STRING at this point, we can be certain
-      #   we have a have a non-legacy FBOS client.
+      #   we have a have an FBOS client.
       if ua.include?(FbosDetector::FARMBOT_UA_STRING)
         return Gem::Version::new(ua[10, 12].split(" ").first)
+      else
+        # Attempt 3:
+        #   Pass NOT_FBOS if all other attempts fail.
+        return NOT_FBOS
       end
-
-      # Attempt 3:
-      #   Pass CalculateUpgrade::NOT_FBOS if all other attempts fail.
-      return CalculateUpgrade::NOT_FBOS
     end
 
     # This is how we lock old versions of FBOS out of the API:
@@ -191,10 +204,10 @@ private
     def mark_as_seen(bot = (current_user && current_user.device))
       when_farmbot_os do
         if bot
-          v                = fbos_version
+          v = fbos_version
           bot.last_saw_api = Time.now
           # Do _not_ set the FBOS version to 0.0.0 if the UA header is missing.
-          bot.fbos_version = v.to_s if v != CalculateUpgrade::NULL
+          bot.fbos_version = v.to_s if v != NULL
           bot.save!
         end
       end

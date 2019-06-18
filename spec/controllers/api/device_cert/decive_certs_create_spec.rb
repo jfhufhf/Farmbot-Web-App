@@ -9,7 +9,7 @@ describe Api::DeviceCertsController do
     it 'creates a cert' do
       # So many locals: ========================================================
       ser  = "456"
-      tags = ["FOO", "BAR"]
+      tags = ["FOO:BAR", "BAR:BAZ"]
       conn = double("Create a cert", :ca_file=    => nil,
                                      :cert_store  => nil,
                                      :cert_store= => nil,
@@ -34,7 +34,6 @@ describe Api::DeviceCertsController do
       post_args = ["/orgs/farmbot/devices/456/certificates/sign",
                    post_data,
                    {"Content-Type"=>"application/json"}]
-      old_count = DeviceSerialNumber.count
 
       # Setup wiring ===========================================================
       NervesHub.set_conn(conn)
@@ -57,8 +56,8 @@ describe Api::DeviceCertsController do
         post :create, body: payl.to_json, params: {format: :json}
       end
       expect(response.status).to eq(200)
-      expect(json).to eq({})
-      expect(DeviceSerialNumber.count).to eq(old_count)
+      expect(json).to be_kind_of(Hash)
+      expect(json.fetch(:id)).to eq(device.id)
     end
   end
 end

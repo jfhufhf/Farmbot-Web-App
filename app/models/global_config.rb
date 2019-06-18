@@ -9,8 +9,8 @@ class GlobalConfig < ApplicationRecord
 
   # Bootstrap these values, but NEVER clobber pre-existing ones:
   {
-    "FBOS_END_OF_LIFE_VERSION" => "6.3.0",
-    "MINIMUM_FBOS_VERSION"     => "6.0.0",
+    "FBOS_END_OF_LIFE_VERSION" => "6.4.11",
+    "MINIMUM_FBOS_VERSION"     => "6.3.0",
     "TOS_URL"                  => ENV.fetch("TOS_URL", ""),
     "PRIV_URL"                 => ENV.fetch("PRIV_URL", "")
   }.map do |(key, value)|
@@ -29,7 +29,7 @@ class GlobalConfig < ApplicationRecord
   end
 
   # Memoized version of every GlobalConfig, with key/values layed out in a hash.
-  # Database values prempt values set in ::DEFAULTS
+  # Database values preempt values set in ::DEFAULTS
   def self.dump
     @dump ||= reload_
   end

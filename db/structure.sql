@@ -5,22 +5,9 @@ SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
 SET check_function_bodies = false;
+SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
-
---
--- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: -
---
-
-CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
-
-
---
--- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: -
---
-
-COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
-
 
 --
 -- Name: hstore; Type: EXTENSION; Schema: -; Owner: -
@@ -55,6 +42,40 @@ CREATE TYPE public.special_action AS ENUM (
 SET default_tablespace = '';
 
 SET default_with_oids = false;
+
+--
+-- Name: alerts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.alerts (
+    id bigint NOT NULL,
+    problem_tag character varying NOT NULL,
+    priority integer DEFAULT 100 NOT NULL,
+    slug character varying NOT NULL,
+    device_id bigint NOT NULL,
+    created_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: alerts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.alerts_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: alerts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.alerts_id_seq OWNED BY public.alerts.id;
+
 
 --
 -- Name: ar_internal_metadata; Type: TABLE; Schema: public; Owner: -
@@ -168,45 +189,13 @@ ALTER SEQUENCE public.delayed_jobs_id_seq OWNED BY public.delayed_jobs.id;
 
 
 --
--- Name: device_serial_numbers; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.device_serial_numbers (
-    id bigint NOT NULL,
-    device_id bigint,
-    serial_number character varying(16) NOT NULL,
-    created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
-);
-
-
---
--- Name: device_serial_numbers_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.device_serial_numbers_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: device_serial_numbers_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.device_serial_numbers_id_seq OWNED BY public.device_serial_numbers.id;
-
-
---
 -- Name: devices; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.devices (
     id integer NOT NULL,
-    name character varying DEFAULT 'Farmbot'::character varying,
-    max_log_count integer DEFAULT 100,
+    name character varying DEFAULT 'FarmBot'::character varying,
+    max_log_count integer DEFAULT 1000,
     max_images_count integer DEFAULT 100,
     timezone character varying(280),
     last_saw_api timestamp without time zone,
@@ -398,7 +387,9 @@ CREATE TABLE public.farmware_installations (
     device_id bigint,
     url character varying,
     created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    package character varying(80),
+    package_error character varying
 );
 
 
@@ -430,7 +421,7 @@ CREATE TABLE public.fbos_configs (
     device_id bigint,
     created_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
-    auto_sync boolean DEFAULT false,
+    auto_sync boolean DEFAULT true,
     beta_opt_in boolean DEFAULT false,
     disable_factory_reset boolean DEFAULT false,
     firmware_input_log boolean DEFAULT false,
@@ -439,7 +430,7 @@ CREATE TABLE public.fbos_configs (
     sequence_complete_log boolean DEFAULT false,
     sequence_init_log boolean DEFAULT false,
     network_not_found_timer integer,
-    firmware_hardware character varying DEFAULT 'arduino'::character varying,
+    firmware_hardware character varying,
     api_migrated boolean DEFAULT true,
     os_auto_update boolean DEFAULT true,
     arduino_debug_messages boolean DEFAULT false,
@@ -477,9 +468,9 @@ CREATE TABLE public.firmware_configs (
     device_id bigint,
     created_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
-    encoder_enabled_x integer DEFAULT 1,
-    encoder_enabled_y integer DEFAULT 1,
-    encoder_enabled_z integer DEFAULT 1,
+    encoder_enabled_x integer DEFAULT 0,
+    encoder_enabled_y integer DEFAULT 0,
+    encoder_enabled_z integer DEFAULT 0,
     encoder_invert_x integer DEFAULT 0,
     encoder_invert_y integer DEFAULT 0,
     encoder_invert_z integer DEFAULT 0,
@@ -569,7 +560,16 @@ CREATE TABLE public.firmware_configs (
     api_migrated boolean DEFAULT true,
     movement_invert_2_endpoints_x integer DEFAULT 0,
     movement_invert_2_endpoints_y integer DEFAULT 0,
-    movement_invert_2_endpoints_z integer DEFAULT 0
+    movement_invert_2_endpoints_z integer DEFAULT 0,
+    movement_microsteps_x integer DEFAULT 1,
+    movement_microsteps_y integer DEFAULT 1,
+    movement_microsteps_z integer DEFAULT 1,
+    movement_motor_current_x integer DEFAULT 600,
+    movement_motor_current_y integer DEFAULT 600,
+    movement_motor_current_z integer DEFAULT 600,
+    movement_stall_sensitivity_x integer DEFAULT 30,
+    movement_stall_sensitivity_y integer DEFAULT 30,
+    movement_stall_sensitivity_z integer DEFAULT 30
 );
 
 
@@ -623,6 +623,42 @@ CREATE SEQUENCE public.fragments_id_seq
 --
 
 ALTER SEQUENCE public.fragments_id_seq OWNED BY public.fragments.id;
+
+
+--
+-- Name: global_bulletins; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.global_bulletins (
+    id bigint NOT NULL,
+    href character varying,
+    href_label character varying,
+    slug character varying,
+    title character varying,
+    type character varying,
+    content text,
+    created_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: global_bulletins_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.global_bulletins_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: global_bulletins_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.global_bulletins_id_seq OWNED BY public.global_bulletins.id;
 
 
 --
@@ -717,7 +753,8 @@ CREATE TABLE public.points (
     tool_id integer,
     pullout_direction integer DEFAULT 0,
     migrated_at timestamp without time zone,
-    discarded_at timestamp without time zone
+    discarded_at timestamp without time zone,
+    gantry_mounted boolean DEFAULT false
 );
 
 
@@ -1484,10 +1521,9 @@ CREATE TABLE public.web_app_configs (
     encoder_figure boolean DEFAULT false,
     hide_webcam_widget boolean DEFAULT false,
     legend_menu_open boolean DEFAULT false,
-    map_xl boolean DEFAULT false,
     raw_encoders boolean DEFAULT false,
     scaled_encoders boolean DEFAULT false,
-    show_spread boolean DEFAULT false,
+    show_spread boolean DEFAULT true,
     show_farmbot boolean DEFAULT true,
     show_plants boolean DEFAULT true,
     show_points boolean DEFAULT true,
@@ -1511,11 +1547,20 @@ CREATE TABLE public.web_app_configs (
     photo_filter_end character varying,
     discard_unsaved boolean DEFAULT false,
     xy_swap boolean DEFAULT false,
-    home_button_homing boolean DEFAULT false,
+    home_button_homing boolean DEFAULT true,
     show_motor_plot boolean DEFAULT false,
     show_historic_points boolean DEFAULT false,
     show_sensor_readings boolean DEFAULT false,
-    show_dev_menu boolean DEFAULT false
+    show_dev_menu boolean DEFAULT false,
+    internal_use text,
+    time_format_24_hour boolean DEFAULT false,
+    show_pins boolean DEFAULT false,
+    disable_emergency_unlock_confirmation boolean DEFAULT false,
+    map_size_x integer DEFAULT 2900,
+    map_size_y integer DEFAULT 1400,
+    expand_step_options boolean DEFAULT false,
+    hide_sensors boolean DEFAULT false,
+    confirm_plant_deletion boolean DEFAULT true
 );
 
 
@@ -1572,6 +1617,13 @@ ALTER SEQUENCE public.webcam_feeds_id_seq OWNED BY public.webcam_feeds.id;
 
 
 --
+-- Name: alerts id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.alerts ALTER COLUMN id SET DEFAULT nextval('public.alerts_id_seq'::regclass);
+
+
+--
 -- Name: arg_names id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1590,13 +1642,6 @@ ALTER TABLE ONLY public.arg_sets ALTER COLUMN id SET DEFAULT nextval('public.arg
 --
 
 ALTER TABLE ONLY public.delayed_jobs ALTER COLUMN id SET DEFAULT nextval('public.delayed_jobs_id_seq'::regclass);
-
-
---
--- Name: device_serial_numbers id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.device_serial_numbers ALTER COLUMN id SET DEFAULT nextval('public.device_serial_numbers_id_seq'::regclass);
 
 
 --
@@ -1660,6 +1705,13 @@ ALTER TABLE ONLY public.firmware_configs ALTER COLUMN id SET DEFAULT nextval('pu
 --
 
 ALTER TABLE ONLY public.fragments ALTER COLUMN id SET DEFAULT nextval('public.fragments_id_seq'::regclass);
+
+
+--
+-- Name: global_bulletins id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.global_bulletins ALTER COLUMN id SET DEFAULT nextval('public.global_bulletins_id_seq'::regclass);
 
 
 --
@@ -1831,6 +1883,14 @@ ALTER TABLE ONLY public.webcam_feeds ALTER COLUMN id SET DEFAULT nextval('public
 
 
 --
+-- Name: alerts alerts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.alerts
+    ADD CONSTRAINT alerts_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: ar_internal_metadata ar_internal_metadata_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1860,14 +1920,6 @@ ALTER TABLE ONLY public.arg_sets
 
 ALTER TABLE ONLY public.delayed_jobs
     ADD CONSTRAINT delayed_jobs_pkey PRIMARY KEY (id);
-
-
---
--- Name: device_serial_numbers device_serial_numbers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.device_serial_numbers
-    ADD CONSTRAINT device_serial_numbers_pkey PRIMARY KEY (id);
 
 
 --
@@ -1940,6 +1992,14 @@ ALTER TABLE ONLY public.firmware_configs
 
 ALTER TABLE ONLY public.fragments
     ADD CONSTRAINT fragments_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: global_bulletins global_bulletins_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.global_bulletins
+    ADD CONSTRAINT global_bulletins_pkey PRIMARY KEY (id);
 
 
 --
@@ -2150,6 +2210,13 @@ CREATE INDEX delayed_jobs_priority ON public.delayed_jobs USING btree (priority,
 
 
 --
+-- Name: index_alerts_on_device_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_alerts_on_device_id ON public.alerts USING btree (device_id);
+
+
+--
 -- Name: index_arg_sets_on_fragment_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2161,13 +2228,6 @@ CREATE INDEX index_arg_sets_on_fragment_id ON public.arg_sets USING btree (fragm
 --
 
 CREATE INDEX index_arg_sets_on_node_id ON public.arg_sets USING btree (node_id);
-
-
---
--- Name: index_device_serial_numbers_on_device_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX index_device_serial_numbers_on_device_id ON public.device_serial_numbers USING btree (device_id);
 
 
 --
@@ -2406,6 +2466,13 @@ CREATE INDEX index_plant_templates_on_saved_garden_id ON public.plant_templates 
 --
 
 CREATE INDEX index_points_on_device_id ON public.points USING btree (device_id);
+
+
+--
+-- Name: index_points_on_device_id_and_tool_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_points_on_device_id_and_tool_id ON public.points USING btree (device_id, tool_id);
 
 
 --
@@ -2709,6 +2776,14 @@ ALTER TABLE ONLY public.farmware_envs
 
 
 --
+-- Name: alerts fk_rails_c0132c78be; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.alerts
+    ADD CONSTRAINT fk_rails_c0132c78be FOREIGN KEY (device_id) REFERENCES public.devices(id);
+
+
+--
 -- Name: diagnostic_dumps fk_rails_c5df7fdc83; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2730,14 +2805,6 @@ ALTER TABLE ONLY public.farmware_installations
 
 ALTER TABLE ONLY public.edge_nodes
     ADD CONSTRAINT fk_rails_c86213fd78 FOREIGN KEY (sequence_id) REFERENCES public.sequences(id);
-
-
---
--- Name: device_serial_numbers fk_rails_d052988096; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.device_serial_numbers
-    ADD CONSTRAINT fk_rails_d052988096 FOREIGN KEY (device_id) REFERENCES public.devices(id);
 
 
 --
@@ -2888,6 +2955,32 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20181204005038'),
 ('20181208035706'),
 ('20190103211708'),
-('20190103213956');
+('20190103213956'),
+('20190108211419'),
+('20190209133811'),
+('20190212215842'),
+('20190307205648'),
+('20190401212119'),
+('20190411152319'),
+('20190411171401'),
+('20190411222900'),
+('20190416035406'),
+('20190417165636'),
+('20190419001321'),
+('20190419052844'),
+('20190419174728'),
+('20190419174811'),
+('20190501143201'),
+('20190502163453'),
+('20190504170018'),
+('20190512015442'),
+('20190513221836'),
+('20190515185612'),
+('20190515205442'),
+('20190603233157'),
+('20190605185311'),
+('20190607192429'),
+('20190613190531'),
+('20190613215319');
 
 

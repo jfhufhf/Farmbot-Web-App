@@ -1,12 +1,13 @@
 module Regimens
   class Create < Mutations::Command
-    include Sequences::TransitionalHelpers
+    include FarmEvents::FragmentHelpers
+    using Sequences::CanonicalCeleryHelpers
 
     required do
-      model  :device, class: Device
+      model :device, class: Device
       string :name
       string :color, in: Sequence::COLORS
-      array  :regimen_items do
+      array :regimen_items do
         hash do
           integer :time_offset
           integer :sequence_id
@@ -14,16 +15,17 @@ module Regimens
       end
     end
 
-    def validate
-      no_parameterized_regimen_items_plz
-    end
+    optional { body }
 
     def execute
-      inputs[:regimen_items].map! do |i|
-        RegimenItem.new(i)
+      ActiveRecord::Base.transaction do
+        inputs[:regimen_items].map! do |i|
+          RegimenItem.new(i)
+        end
+        wrap_fragment_with(Regimen.create!(inputs.except(:body)))
       end
-      Regimen.create!(inputs)
     end
   end
 end
+
 Regimina ||= Regimens # Lol, inflection errors
