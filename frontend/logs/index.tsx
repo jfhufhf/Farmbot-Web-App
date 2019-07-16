@@ -20,10 +20,15 @@ import { timeFormatString } from "../util";
 
 /** Format log date and time for display in the app. */
 export const formatLogTime =
+  // (created_at: number, timeSettings: TimeSettings) =>
+  //   moment.unix(created_at)
+  //     .utcOffset(timeSettings.utcOffset)
+  //     .format(`MMM D, ${timeFormatString(timeSettings)}`);
+
   (created_at: number, timeSettings: TimeSettings) =>
-    moment.unix(created_at)
-      .utcOffset(timeSettings.utcOffset)
-      .format(`MMM D, ${timeFormatString(timeSettings)}`);
+  moment.unix(created_at)
+    .utcOffset(timeSettings.utcOffset)
+    .format(`YYYY-MM-DD, ${timeFormatString(timeSettings)}`);
 
 @connect(mapStateToProps)
 export class Logs extends React.Component<LogsProps, Partial<LogsState>> {

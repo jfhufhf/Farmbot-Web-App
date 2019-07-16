@@ -75,6 +75,9 @@ const Ticker = (log: TaggedLog, timeSettings: TimeSettings) => {
 export let TickerList = (props: TickerListProps) => {
   return <ErrorBoundary>
     <div className="ticker-list" onClick={props.toggle("tickerListOpen")} >
+    <div className = 'banner_log_X'>
+          <img className = 'banner_log_IMG' src="/app-resources/img/log_2.png"/>
+     </div>
       <div className="first-ticker">
         {Ticker(getfirstTickerLog(props.getConfigValue)(props.logs),
           props.timeSettings)}

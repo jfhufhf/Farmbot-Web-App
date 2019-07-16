@@ -3,13 +3,13 @@
   left: 0;
   right: 0;
   z-index: 99;
-  height: 8.9rem;
+  height: 13.9rem;
   background: $dark_gray;
   box-shadow: 0 4px 10px rgba(0, 0, 0, .2);
 }
 
 nav {
-  margin: 3.4rem auto 0;
+  margin: 8.2rem auto 0;
   max-width: 140rem;
   button {
     margin: 1.8rem 1.8rem 0 0;
@@ -20,9 +20,15 @@ nav {
 .nav-group {
   display: flex;
   justify-content: space-between;
+  // padding: 5.5rem 1rem 0 1rem;
   padding: 0 1rem;
 }
-
+.bp3-transition-container{
+      z-index: 100;
+}
+.bp3-popover .bp3-popover-arrow{
+  opacity:0;
+}
 .nav-sync {
   min-width: 90px;
   &.auto-sync {

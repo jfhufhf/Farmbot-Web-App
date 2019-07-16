@@ -25,7 +25,7 @@ interface RootComponentState {
 }
 
 export class RootComponent extends React.Component<RootComponentProps, RootComponentState> {
-    state: RootComponentState = { Route: () => <div>Loading...</div> };
+    state: RootComponentState = { Route: () => <div>读取中...</div> };
 
     componentWillMount() {
         const notLoggedIn = !Session.fetchStoredToken();

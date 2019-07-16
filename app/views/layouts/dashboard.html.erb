@@ -3,7 +3,9 @@
   <head>
     <meta content='text/html; charset=UTF-8' http-equiv='Content-Type' />
     <meta content="width=device-width, initial-scale=1" name="viewport">
-    <title>FarmBot</title>
+    <meta content="black" name="theme-color">
+    <meta content="black" name="apple-mobile-web-app-status-bar-style">
+    <title>农业智能机器人</title>
     <%= stylesheet_link_tag 'application' %>
     <style>
       body { background: #ccc; }
@@ -19,9 +21,9 @@
       window.process = { env: { NODE_ENV: <%= raw(Rails.env.inspect) %> } }
     </script>
     <%= render "addons" %>
+    <%= yield :head %>
   </head>
   <body>
-    <h1 class="initial-loading-text">Loading...</h1>
     <%= yield %>
     <%= javascript_include_tag *@js_assets %>
   </body>

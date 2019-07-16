@@ -1,9 +1,11 @@
+
+///主架构
 import * as React from "react";
 import { connect } from "react-redux";
 import { init, error } from "farmbot-toastr";
 import { NavBar } from "./nav";
 import { Everything, TimeSettings } from "./interfaces";
-import { LoadingPlant } from "./loading_plant";
+import { LoadingPlant } from "./loading_plant";               //二层loading
 import { BotState, Xyz } from "./devices/interfaces";
 import { ResourceName, TaggedUser, TaggedLog } from "farmbot";
 import {
@@ -112,7 +114,6 @@ export class App extends React.Component<AppProps, {}> {
       }
     }, LOAD_TIME_FAILURE_MS);
   }
-
   render() {
     const syncLoaded = this.isLoaded;
     const currentPage = getPathArray()[2];

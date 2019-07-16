@@ -1,4 +1,4 @@
-import { AuthState } from "./auth/interfaces";
+import { AuthState } from "./auth/interfaces";     //token有关链
 import { box } from "boxed_value";
 import { BooleanSetting, NumericSetting } from "./session_keys";
 import { BooleanConfigKey, NumberConfigKey } from "farmbot/dist/resources/configs/web_app";
@@ -13,7 +13,7 @@ import { BooleanConfigKey, NumberConfigKey } from "farmbot/dist/resources/config
  *   - Create an upgrade path for the eventual server side storage
  */
 export namespace Session {
-  /** Key that holds the user's JWT */
+  /** 持有用户JWT的密钥 */
   const KEY = "session";
 
   /** Replace the contents of session storage. */

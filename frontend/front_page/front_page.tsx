@@ -1,22 +1,23 @@
+//登录页
 import * as React from "react";
 import axios from "axios";
 
 import { error as log, success, init as logInit } from "farmbot-toastr";
 import { AuthState } from "../auth/interfaces";
 import { prettyPrintApiErrors, attachToRoot } from "../util";
-import { API } from "../api";
-import { Session } from "../session";
-import { FrontPageState, SetterCB } from "./interfaces";
-import { Row, Col } from "../ui/index";
-import { LoginProps, Login } from "./login";
-import { ForgotPassword, ForgotPasswordProps } from "./forgot_password";
+import { API } from "../api";                         //请求接口的地址
+import { Session } from "../session";                 //持有用户JWT的密钥
+import { FrontPageState, SetterCB } from "./interfaces";   //值
+import { Row, Col } from "../ui/index";                //封装的布局页面
+import { LoginProps, Login } from "./login";             //登录块
+import { ForgotPassword, ForgotPasswordProps } from "./forgot_password";   //忘记密码
 import { ResendVerification } from "./resend_verification";
-import { CreateAccount } from "./create_account";
-import { Content } from "../constants";
-import { LaptopSplash } from "./laptop_splash";
+import { CreateAccount } from "./create_account";                       //注册账户
+import { Content } from "../constants";                                  //提示信息
+import { LaptopSplash } from "./laptop_splash";                           //登录页右边电脑
 import { TermsCheckbox } from "./terms_checkbox";
-import { get } from "lodash";
-import { t } from "../i18next_wrapper";
+import { get } from "lodash";                                      //JavaScript 实用工具库
+import { t } from "../i18next_wrapper";                            //双语言
 
 export const attachFrontPage =
   () => attachToRoot(FrontPage, {});
@@ -73,10 +74,42 @@ export class FrontPage extends React.Component<{}, Partial<FrontPageState>> {
   }
 
   componentDidMount() {
-    if (Session.fetchStoredToken()) { window.location.assign("/app/controls"); }
-    logInit();
-    API.setBaseUrl(API.fetchBrowserLocation());
-    this.setState({});
+    if (Session.fetchStoredToken()) { window.location.assign("/app/controls"); }else{
+        var something:any;
+        something =  window.navigator.userAgent.toLowerCase();
+      if(something.match(/MicroMessenger/i) == 'micromessenger'){
+          var appid:string = 'wx670b5b928b90c9ab';
+          let redirectUrl:string = 'http://120.77.169.211/index.php ';
+            window.location.href = 'https://open.weixin.qq.com/connect/oauth2/authorize?appid='+appid+'&redirect_uri='+redirectUrl+'&response_type=code&scope=snsapi_userinfo&state=123#wechat_redirect'
+          
+        //  API.setBaseUrl(API.fetchBrowserLocation());
+        //   axios.post<AuthState>(API.current.tokensWechat)
+        //     .then(resp => {
+        //       // Session.replaceToken(resp.data);
+        //       // Session.replaceToken({"token":{"unencoded":{"aud":"unknown","sub":2,"iat":1562659396,"jti":"35e47a93-f359-4648-b3fb-48188e45dff6","iss":"//120.77.169.211:3000","exp":1566115396,"mqtt":"120.77.169.211","bot":"device_2","vhost":"/","mqtt_ws":"ws://120.77.169.211:3002/ws","os_update_server":"https://api.github.com/repos/farmbot/farmbot_os/releases/latest","beta_os_update_server":"https://api.github.com/repos/FarmBot/farmbot_os/releases/latest"},"encoded":"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiJ1bmtub3duIiwic3ViIjoyLCJpYXQiOjE1NjI2NTkzOTYsImp0aSI6IjM1ZTQ3YTkzLWYzNTktNDY0OC1iM2ZiLTQ4MTg4ZTQ1ZGZmNiIsImlzcyI6Ii8vMTIwLjc3LjE2OS4yMTE6MzAwMCIsImV4cCI6MTU2NjExNTM5NiwibXF0dCI6IjEyMC43Ny4xNjkuMjExIiwiYm90IjoiZGV2aWNlXzIiLCJ2aG9zdCI6Ii8iLCJtcXR0X3dzIjoid3M6Ly8xMjAuNzcuMTY5LjIxMTozMDAyL3dzIiwib3NfdXBkYXRlX3NlcnZlciI6Imh0dHBzOi8vYXBpLmdpdGh1Yi5jb20vcmVwb3MvZmFybWJvdC9mYXJtYm90X29zL3JlbGVhc2VzL2xhdGVzdCIsImJldGFfb3NfdXBkYXRlX3NlcnZlciI6Imh0dHBzOi8vYXBpLmdpdGh1Yi5jb20vcmVwb3MvRmFybUJvdC9mYXJtYm90X29zL3JlbGVhc2VzL2xhdGVzdCJ9.DWNvAUnC3h3WLTRXuQyOS_VPq3PrmcqBLK2ACZJutvoRRLuss8rXmsGSe-2jJiReYP1rHJH7dlDME2kXuj6MlYx6uQbsZGspdsvChD-l3RH5f45yvU36cLtg3AtksHTCA0idGYJaGAFbOa2Mfm9wbHiBTCkqBc53ZnSkEExEXj-YaZ1F8nsJ6IprADX_4nBgD_yKT6syVjNk3x017wY-NHixEMsXzB17AyF3N2Zn9VYVwQ2Sjl9gp8yWvWZ24AJlxQCv3LthfcNoO48kh9o40GCzvWIIXA5lG4LABo6LJ00xgaUDPgEwj9DVN8aqSyjzZjB1SLeO_BqGE75cXc3hDQ"},"user":{"id":2,"device_id":2,"name":"555","email":"18695694535@qq.com","created_at":"2019-07-09T08:03:08.990Z","updated_at":"2019-07-09T08:03:09.331Z","agreed_to_terms_at":"2019-07-09T08:03:08.170Z"}});
+        //       // window.location.assign("/app/controls");
+
+        //     }).catch((error: Error) => {
+        //       switch (get(error, "response.status")) {
+        //         case 451: // TOS was updated; User must agree to terms.
+        //           window.location.assign("/tos_update");
+        //           break;
+        //         case 403: // User did not click verification email link.
+        //           log(t("Account Not Verified"));
+        //           this.setState({ activePanel: "resendVerificationEmail" });
+        //           break;
+        //         default:
+        //           log(prettyPrintApiErrors(error as {}));
+        //       }
+        //       this.setState({ loginPassword: "" });
+        //     }); 
+      }else{
+          logInit();
+          API.setBaseUrl(API.fetchBrowserLocation());
+          this.setState({});
+      }
+    }
+   
   }
 
   submitLogin = (e: React.FormEvent<{}>) => {
@@ -213,6 +246,9 @@ export class FrontPage extends React.Component<{}, Partial<FrontPageState>> {
 
   defaultContent() {
     return <div className="static-page">
+     <div className = 'banner_log_X'>
+           <img className = 'banner_log_IMG' src="/app-resources/img/log_1.png"/>
+      </div>
       <Row>
         <Col xs={12}>
           <h1 className="text-center">

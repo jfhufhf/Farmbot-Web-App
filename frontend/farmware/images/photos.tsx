@@ -85,7 +85,7 @@ export const PhotoFooter = ({ image, timeSettings }: PhotoFooterProps) => {
   const created_at = image
     ? moment(image.body.created_at)
       .utcOffset(timeSettings.utcOffset)
-      .format(`MMMM Do, YYYY ${timeFormatString(timeSettings)}`)
+      .format(`YYYY-MM-DD, ${timeFormatString(timeSettings)}`)
     : "";
   return <div className="photos-footer">
     {/** Separated from <MetaInfo /> for stylistic purposes. */}

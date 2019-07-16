@@ -1,6 +1,6 @@
 /// <reference path="../typings/index.d.ts" />
 /**
- * THIS IS THE ENTRY POINT FOR THE MAIN PORTION OF THE WEB APP.
+ * 这是Web应用程序主要部分的入口点.
  *
  * Try to keep this file light. */
 import { detectLanguage } from "./i18n";

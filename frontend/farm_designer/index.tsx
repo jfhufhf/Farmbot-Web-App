@@ -1,12 +1,13 @@
+//farm-designer
 import * as React from "react";
 import { connect } from "react-redux";
-import { GardenMap } from "./map/garden_map";
+import { GardenMap } from "./map/garden_map";    //种植物的场地
 import {
   Props, State, BotOriginQuadrant, isBotOriginQuadrant
 } from "./interfaces";
 import { mapStateToProps } from "./state_to_props";
 import { Plants } from "./plants/plant_inventory";
-import { GardenMapLegend } from "./map/legend/garden_map_legend";
+import { GardenMapLegend } from "./map/legend/garden_map_legend";  //左边栏搜索植物
 import { NumericSetting, BooleanSetting } from "../session_keys";
 import { isUndefined, last, isFinite } from "lodash";
 import { AxisNumberProperty, BotSize } from "./map/interfaces";
