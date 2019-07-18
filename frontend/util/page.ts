@@ -9,7 +9,7 @@ import { t } from "../i18next_wrapper";
 
 /** Dynamically change the meta title of the page. */
 export function updatePageInfo(pageName: string) {
-  if (pageName === "designer") { pageName = "Farm Designer"; }
+  if (pageName === "designer") { pageName = "农场设计师"; }
   document.title = `${t(capitalize(pageName))} - 农业智能机器人`;
   // Possibly add meta "content" here dynamically as well
 }

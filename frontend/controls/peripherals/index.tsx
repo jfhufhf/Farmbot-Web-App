@@ -98,7 +98,7 @@ export class Peripherals
           type="button"
           onClick={this.farmduinoPeripherals}>
           <i className="fa fa-plus" style={{ marginRight: "0.5rem" }} />
-          Farmduino
+          t("Farmduino")
           </button>
       </WidgetHeader>
       <WidgetBody>

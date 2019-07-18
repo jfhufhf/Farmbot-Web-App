@@ -147,10 +147,10 @@ export function ConnectivityDiagram(props: ConnectivityDiagramProps) {
       <g className="text"
         dominantBaseline="middle">
         {nodeLabel(t("Browser"), DiagramNodes.browser)}
-        {nodeLabel("Web App", DiagramNodes.API)}
+        {nodeLabel(t("Web App"), DiagramNodes.API)}
         {nodeLabel(t("Message Broker"), DiagramNodes.MQTT)}
-        {nodeLabel("FarmBot", DiagramNodes.bot)}
-        {nodeLabel("Raspberry Pi", DiagramNodes.RPI, "end")}
+        {nodeLabel(t("FarmBot"), DiagramNodes.bot)}
+        {nodeLabel(t("Raspberry Pi"), DiagramNodes.RPI, "end")}
         {nodeLabel(board, DiagramNodes.arduino, "start")}
       </g>
 

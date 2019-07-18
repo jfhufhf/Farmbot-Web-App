@@ -255,7 +255,8 @@ export class CropInfo extends React.Component<CropInfoProps, {}> {
         <EmptyStateWrapper
           notEmpty={!cropSearchInProgress}
           graphic={EmptyStateGraphic.no_crop_results}
-          title={t("Loading...")}>
+          title={t("Loading...")}
+          >
           <CropDragInfoTile image={result.image} svgIcon={result.crop.svg_icon} />
           <EditOnOpenFarm slug={result.crop.slug} />
           <CropInfoList {...result.crop} />

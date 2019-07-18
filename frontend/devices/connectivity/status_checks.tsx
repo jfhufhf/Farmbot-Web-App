@@ -27,8 +27,8 @@ export function botToAPI(stat: string | undefined,
 
   return {
     connectionName: "botAPI",
-    from: "FarmBot",
-    to: "Web App",
+    from: t("FarmBot"),
+    to: t("Web App"),
     connectionStatus: stat ? (now.diff(moment(stat)) < SIX_HOURS) : false,
     children: stat ? t("Last message seen ") + `${ago(stat)}.` : NOT_SEEN
   };
@@ -37,7 +37,7 @@ export function botToAPI(stat: string | undefined,
 export function botToMQTT(stat: ConnectionStatus | undefined): StatusRowProps {
   return {
     connectionName: "botMQTT",
-    from: "FarmBot",
+    from: t("FarmBot"),
     to: t("Message Broker"),
     connectionStatus: statusOf(stat),
     children: (stat && stat.state === "up")
@@ -73,7 +73,7 @@ export function botToFirmware(version: string | undefined): StatusRowProps {
   };
   return {
     connectionName: "botFirmware",
-    from: "Raspberry Pi",
+    from: t("Raspberry Pi"),
     to: ["F", "G", "E"].includes(boardIdentifier) ? "Farmduino" : "Arduino",
     children: connection().msg,
     connectionStatus: connection().status

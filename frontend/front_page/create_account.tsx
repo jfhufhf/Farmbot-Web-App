@@ -60,7 +60,7 @@ interface FieldData {
 
 const FIELDS: FieldData[] = [
   { label: "Email", type: "email", keyName: "regEmail" },
-  { label: "Name", type: "text", keyName: "regName" },
+  { label: "昵称", type: "text", keyName: "regName" },
   { label: "Password", type: "password", keyName: "regPassword" },
   { label: "Verify Password", type: "password", keyName: "regConfirmation" },
 ];

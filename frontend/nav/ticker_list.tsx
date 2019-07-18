@@ -61,9 +61,9 @@ const Ticker = (log: TaggedLog, timeSettings: TimeSettings) => {
   return <div key={log.uuid} className="status-ticker-wrapper">
     <div className={`saucer ${type}`} />
     <label className="status-ticker-message">
-      <Markdown>
+      {/* <Markdown>          //去除了日志的英文
         {message.replace(/\s+/g, " ") || t("Loading")}
-      </Markdown>
+      </Markdown> */}
     </label>
     <label className="status-ticker-created-at">
       {t(time)}
@@ -74,7 +74,9 @@ const Ticker = (log: TaggedLog, timeSettings: TimeSettings) => {
 /** The logs ticker, with closed/open views, and a link to the Logs page. */
 export let TickerList = (props: TickerListProps) => {
   return <ErrorBoundary>
-    <div className="ticker-list" onClick={props.toggle("tickerListOpen")} >
+    {/* 去除了日志的点击功能 */}
+    {/* <div className="ticker-list" onClick={props.toggle("tickerListOpen")} > */}
+    <div className="ticker-list"  >
     <div className = 'banner_log_X'>
           <img className = 'banner_log_IMG' src="/app-resources/img/log_2.png"/>
      </div>

@@ -25,7 +25,7 @@ export function TileTakePhoto(props: StepParams) {
           <p>
             {t("Photos are viewable from the")}
             <Link to="/app/farmware">
-              {` farmware ${t("page")}`}
+              {` ${t("farmware")} ${t("page")}`}
             </Link>.
           </p>
         </Col>

@@ -91,8 +91,7 @@ class BulletinAlert
 
   get bulletinData(): Bulletin {
     return this.state.bulletin || {
-      content: this.state.no_content ? t("Unable to load content.")
-        : t("Loading..."),
+      content: this.state.no_content ? t("Unable to load content."): t("Loading..."),
       href: undefined,
       href_label: undefined,
       type: "info",
