@@ -97,6 +97,7 @@ module Api
       #       differentiate to avoid accidental
       #       security issues. -RC
       when "guest" then deny
+      when FARMBOT_DEMO_USER then allow
       when "admin" then authenticate_admin
       when FARMBOT_DEMO_USER
         with_rate_limit { allow }
