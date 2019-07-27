@@ -4,7 +4,7 @@ import { Log } from "farmbot/dist/resources/api_resources";
 import { Farmbot, BotStateTree, TaggedResource } from "farmbot";
 import { FbjsEventName } from "farmbot/dist/constants";
 import { noop } from "lodash";
-import { success, error, info, warning } from "farmbot-toastr";
+import { success, error, info, warning, fun, busy } from "../toast/toast";
 import { HardwareState } from "../devices/interfaces";
 import { GetState, ReduxAction } from "../redux/interfaces";
 import { Content, Actions } from "../constants";
@@ -29,7 +29,7 @@ import { DeepPartial } from "redux";
 import { slowDown } from "./slow_down";
 import { t } from "../i18next_wrapper";
 
-export const TITLE = "New message from bot";
+export const TITLE = () => t("New message from bot");
 /** TODO: This ought to be stored in Redux. It is here because of historical
  * reasons. Feel free to factor out when time allows. -RC, 10 OCT 17 */
 export const HACKY_FLAGS = {
@@ -57,19 +57,24 @@ export function actOnChannelName(
 /** Take a log message (of type toast) and determines the correct kind of toast
  * to execute. */
 export function showLogOnScreen(log: Log) {
-  switch (log.type) {
-    case MessageType.success:
-      return success(log.message, t(TITLE));
-    case MessageType.warn:
-      return warning(log.message, t(TITLE));
-    case MessageType.busy:
-    case MessageType.error:
-      return error(log.message, t(TITLE));
-    case MessageType.fun:
-    case MessageType.info:
-    default:
-      return info(log.message, t(TITLE));
-  }
+  const toast = () => {
+    switch (log.type) {
+      case MessageType.success:
+        return success;
+      case MessageType.warn:
+        return warning;
+      case MessageType.error:
+        return error;
+      case MessageType.fun:
+        return fun;
+      case MessageType.busy:
+        return busy;
+      case MessageType.info:
+      default:
+        return info;
+    }
+  };
+  toast()(log.message, TITLE());
 }
 
 export function speakLogAloud(getState: GetState) {
@@ -104,7 +109,7 @@ export function readStatus() {
 
 export const onOffline = () => {
   dispatchNetworkDown("user.mqtt", undefined, "onOffline() callback");
-  error(t(Content.MQTT_DISCONNECTED), t("Error"));
+  error(t(Content.MQTT_DISCONNECTED));
 };
 
 export const changeLastClientConnected = (bot: Farmbot) => () => {
@@ -164,7 +169,8 @@ export const onOnline =
     dispatchNetworkUp("user.mqtt", undefined, "MQTT.js is online");
   };
 export const onReconnect =
-  () => warning(t("Attempting to reconnect to the message broker"), t("Offline"));
+  () => warning(t("Attempting to reconnect to the message broker"),
+  t("Offline"), "yellow");
 
 export function onPublicBroadcast(payl: unknown) {
   console.log(FbjsEventName.publicBroadcast, payl);

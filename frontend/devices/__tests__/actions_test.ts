@@ -39,7 +39,7 @@ import { Actions } from "../../constants";
 import { buildResourceIndex } from "../../__test_support__/resource_index_builder";
 import { API } from "../../api/index";
 import axios from "axios";
-import { success, error, warning, info } from "farmbot-toastr";
+import { success, error, warning, info } from "../../toast/toast";
 import { edit, save } from "../../api/crud";
 
 describe("checkControllerUpdates()", function () {
@@ -263,8 +263,12 @@ describe("isLog()", function () {
   });
 
   it("filters sensitive logs", () => {
-    expect(() => actions.isLog({ message: "NERVESPSKWPASSWORD" }))
-      .toThrowError(/Refusing to display log/);
+    const log = { message: "NERVESPSKWPASSWORD" };
+    console.error = jest.fn();
+    const result = actions.isLog(log);
+    expect(result).toBe(false);
+    expect(console.error).toHaveBeenCalledWith(
+      expect.stringContaining("Refusing to display log"));
   });
 });
 
@@ -364,17 +368,21 @@ describe("fetchReleases()", () => {
 });
 
 describe("fetchLatestGHBetaRelease()", () => {
-  it("fetches latest beta OS release version", async () => {
-    mockGetRelease = Promise.resolve({ data: [{ tag_name: "v1.0.0-beta" }] });
-    const dispatch = jest.fn();
-    await actions.fetchLatestGHBetaRelease("url/001")(dispatch);
-    expect(axios.get).toHaveBeenCalledWith("url");
-    expect(error).not.toHaveBeenCalled();
-    expect(dispatch).toHaveBeenCalledWith({
-      payload: { version: "1.0.0-beta", commit: undefined },
-      type: Actions.FETCH_BETA_OS_UPDATE_INFO_OK
+  const testFetchBeta = (tag_name: string, version: string) =>
+    it(`fetches latest beta OS release version: ${tag_name}`, async () => {
+      mockGetRelease = Promise.resolve({ data: [{ tag_name }] });
+      const dispatch = jest.fn();
+      await actions.fetchLatestGHBetaRelease("url/001")(dispatch);
+      expect(axios.get).toHaveBeenCalledWith("url");
+      expect(error).not.toHaveBeenCalled();
+      expect(dispatch).toHaveBeenCalledWith({
+        payload: { version, commit: undefined },
+        type: Actions.FETCH_BETA_OS_UPDATE_INFO_OK
+      });
     });
-  });
+
+  testFetchBeta("v1.0.0-beta", "1.0.0-beta");
+  testFetchBeta("v1.0.0-rc1", "1.0.0-rc1");
 
   it("fails to fetches latest beta OS release version", async () => {
     mockGetRelease = Promise.reject("error");

@@ -50,28 +50,22 @@ module Devices
         :tool_slots_slot_4,
         :tool_slots_slot_5,
         :tool_slots_slot_6,
-      ]
 
-      unless Rails.env.production?
-        # PROBLEM:
-        #  * FBOS v8 is not out yet.
-        #  * The seed sequences use variables (FBOS >= v8)
-        #  * You already wrote all the tests and stuff.
-        # SOLUTION:
-        #  * Leave the tests in place
-        #  * Disable the behavior in production ENVs
-        #  * Put this code back in the main array when v8 is released.
+        # WEBCAM FEEDS ===========================
+        :webcam_feeds,
+
         # SEQUENCES ==============================
-        [:sequences_tool_error,
-         :sequences_mount_tool,
-         :sequences_pick_up_seed,
-         :sequences_plant_seed,
-         :sequences_take_photo_of_plant,
-         :sequences_unmount_tool,
-         :sequences_water_plant].map do |x|
-          COMMAND_ORDER.push(x)
-         end
-      end
+        :sequences_tool_error,
+        :sequences_mount_tool,
+        :sequences_pick_up_seed,
+        :sequences_plant_seed,
+        :sequences_take_photo_of_plant,
+        :sequences_unmount_tool,
+        :sequences_water_plant,
+
+        # EVERYTHING ELSE ========================
+        :misc,
+      ]
 
       def initialize(device)
         @device = device
@@ -231,6 +225,9 @@ module Devices
       def vacuum_id
         @vacuum_id ||= device.peripherals.find_by!(label: ToolNames::VACUUM).id
       end
+
+      def webcam_feeds; end
+      def misc; end
     end
   end
 end

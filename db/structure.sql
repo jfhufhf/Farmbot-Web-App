@@ -44,6 +44,74 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 --
+-- Name: active_storage_attachments; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.active_storage_attachments (
+    id bigint NOT NULL,
+    name character varying NOT NULL,
+    record_type character varying NOT NULL,
+    record_id bigint NOT NULL,
+    blob_id bigint NOT NULL,
+    created_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: active_storage_attachments_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.active_storage_attachments_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: active_storage_attachments_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.active_storage_attachments_id_seq OWNED BY public.active_storage_attachments.id;
+
+
+--
+-- Name: active_storage_blobs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.active_storage_blobs (
+    id bigint NOT NULL,
+    key character varying NOT NULL,
+    filename character varying NOT NULL,
+    content_type character varying,
+    metadata text,
+    byte_size bigint NOT NULL,
+    checksum character varying NOT NULL,
+    created_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: active_storage_blobs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.active_storage_blobs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: active_storage_blobs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.active_storage_blobs_id_seq OWNED BY public.active_storage_blobs.id;
+
+
+--
 -- Name: alerts; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -206,7 +274,8 @@ CREATE TABLE public.devices (
     mounted_tool_id bigint,
     created_at timestamp without time zone,
     updated_at timestamp without time zone,
-    serial_number character varying(32)
+    serial_number character varying(32),
+    mqtt_rate_limit_email_sent_at timestamp without time zone
 );
 
 
@@ -1225,6 +1294,38 @@ ALTER SEQUENCE public.regimens_id_seq OWNED BY public.regimens.id;
 
 
 --
+-- Name: resource_update_steps; Type: VIEW; Schema: public; Owner: -
+--
+
+CREATE VIEW public.resource_update_steps AS
+ WITH resource_type AS (
+         SELECT edge_nodes.primary_node_id,
+            edge_nodes.kind,
+            edge_nodes.value
+           FROM public.edge_nodes
+          WHERE (((edge_nodes.kind)::text = 'resource_type'::text) AND ((edge_nodes.value)::text = ANY ((ARRAY['"GenericPointer"'::character varying, '"ToolSlot"'::character varying, '"Plant"'::character varying])::text[])))
+        ), resource_id AS (
+         SELECT edge_nodes.primary_node_id,
+            edge_nodes.kind,
+            edge_nodes.value,
+            edge_nodes.sequence_id
+           FROM public.edge_nodes
+          WHERE ((edge_nodes.kind)::text = 'resource_id'::text)
+        ), user_sequence AS (
+         SELECT sequences.name,
+            sequences.id
+           FROM public.sequences
+        )
+ SELECT j1.sequence_id,
+    j1.primary_node_id,
+    (j1.value)::bigint AS point_id,
+    j3.name AS sequence_name
+   FROM ((resource_id j1
+     JOIN resource_type j2 ON ((j1.primary_node_id = j2.primary_node_id)))
+     JOIN user_sequence j3 ON ((j3.id = j1.sequence_id)));
+
+
+--
 -- Name: saved_gardens; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1531,7 +1632,7 @@ CREATE TABLE public.web_app_configs (
     y_axis_inverted boolean DEFAULT false,
     z_axis_inverted boolean DEFAULT false,
     bot_origin_quadrant integer DEFAULT 2,
-    zoom_level integer DEFAULT 1,
+    zoom_level integer DEFAULT '-2'::integer,
     success_log integer DEFAULT 1,
     busy_log integer DEFAULT 1,
     warn_log integer DEFAULT 1,
@@ -1560,7 +1661,9 @@ CREATE TABLE public.web_app_configs (
     map_size_y integer DEFAULT 1400,
     expand_step_options boolean DEFAULT false,
     hide_sensors boolean DEFAULT false,
-    confirm_plant_deletion boolean DEFAULT true
+    confirm_plant_deletion boolean DEFAULT true,
+    discard_unsaved_sequences boolean DEFAULT false,
+    confirm_sequence_deletion boolean DEFAULT true
 );
 
 
@@ -1614,6 +1717,20 @@ CREATE SEQUENCE public.webcam_feeds_id_seq
 --
 
 ALTER SEQUENCE public.webcam_feeds_id_seq OWNED BY public.webcam_feeds.id;
+
+
+--
+-- Name: active_storage_attachments id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.active_storage_attachments ALTER COLUMN id SET DEFAULT nextval('public.active_storage_attachments_id_seq'::regclass);
+
+
+--
+-- Name: active_storage_blobs id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.active_storage_blobs ALTER COLUMN id SET DEFAULT nextval('public.active_storage_blobs_id_seq'::regclass);
 
 
 --
@@ -1880,6 +1997,22 @@ ALTER TABLE ONLY public.web_app_configs ALTER COLUMN id SET DEFAULT nextval('pub
 --
 
 ALTER TABLE ONLY public.webcam_feeds ALTER COLUMN id SET DEFAULT nextval('public.webcam_feeds_id_seq'::regclass);
+
+
+--
+-- Name: active_storage_attachments active_storage_attachments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.active_storage_attachments
+    ADD CONSTRAINT active_storage_attachments_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: active_storage_blobs active_storage_blobs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.active_storage_blobs
+    ADD CONSTRAINT active_storage_blobs_pkey PRIMARY KEY (id);
 
 
 --
@@ -2207,6 +2340,27 @@ ALTER TABLE ONLY public.webcam_feeds
 --
 
 CREATE INDEX delayed_jobs_priority ON public.delayed_jobs USING btree (priority, run_at);
+
+
+--
+-- Name: index_active_storage_attachments_on_blob_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_active_storage_attachments_on_blob_id ON public.active_storage_attachments USING btree (blob_id);
+
+
+--
+-- Name: index_active_storage_attachments_uniqueness; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_active_storage_attachments_uniqueness ON public.active_storage_attachments USING btree (record_type, record_id, name, blob_id);
+
+
+--
+-- Name: index_active_storage_blobs_on_key; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_active_storage_blobs_on_key ON public.active_storage_blobs USING btree (key);
 
 
 --
@@ -2760,6 +2914,14 @@ ALTER TABLE ONLY public.points
 
 
 --
+-- Name: farmware_envs fk_rails_ab55c3a1d1; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.farmware_envs
+    ADD CONSTRAINT fk_rails_ab55c3a1d1 FOREIGN KEY (device_id) REFERENCES public.devices(id);
+
+
+--
 -- Name: primary_nodes fk_rails_bca7fee3b9; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2768,19 +2930,19 @@ ALTER TABLE ONLY public.primary_nodes
 
 
 --
--- Name: farmware_envs fk_rails_bdadc396eb; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.farmware_envs
-    ADD CONSTRAINT fk_rails_bdadc396eb FOREIGN KEY (device_id) REFERENCES public.devices(id);
-
-
---
 -- Name: alerts fk_rails_c0132c78be; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.alerts
     ADD CONSTRAINT fk_rails_c0132c78be FOREIGN KEY (device_id) REFERENCES public.devices(id);
+
+
+--
+-- Name: active_storage_attachments fk_rails_c3b3935057; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.active_storage_attachments
+    ADD CONSTRAINT fk_rails_c3b3935057 FOREIGN KEY (blob_id) REFERENCES public.active_storage_blobs(id);
 
 
 --
@@ -2981,6 +3143,12 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20190605185311'),
 ('20190607192429'),
 ('20190613190531'),
-('20190613215319');
+('20190613215319'),
+('20190621160042'),
+('20190621202204'),
+('20190701155706'),
+('20190709194037'),
+('20190715214412'),
+('20190722160305');
 
 

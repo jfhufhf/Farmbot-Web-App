@@ -6,7 +6,7 @@ import {
   CommonAlertCardProps,
   DismissAlertProps,
   Bulletin,
-  BulletinAlertState
+  BulletinAlertComponentState
 } from "./interfaces";
 import { formatLogTime } from "../logs";
 import {
@@ -18,12 +18,13 @@ import { TourList } from "../help/tour_list";
 import { splitProblemTag } from "./alerts";
 import { destroy } from "../api/crud";
 import {
-  isFwHardwareValue
-} from "../devices/components/fbos_settings/board_type";
+  isFwHardwareValue, FIRMWARE_CHOICES_DDI, getFirmwareChoices
+} from "../devices/components/firmware_hardware_support";
 import { updateConfig } from "../devices/actions";
 import { fetchBulletinContent, seedAccount } from "./actions";
 import { startCase } from "lodash";
 import { DevSettings } from "../account/dev/dev_support";
+import { Session } from "../session";
 
 export const AlertCard = (props: AlertCardProps) => {
   const { alert, timeSettings, findApiAlertById, dispatch } = props;
@@ -44,6 +45,8 @@ export const AlertCard = (props: AlertCardProps) => {
       return <DocumentationUnread {...commonProps} />;
     case "api.bulletin.unread":
       return <BulletinAlert {...commonProps} />;
+    case "api.demo_account.in_use":
+      return <DemoAccount {...commonProps} />;
     default:
       return <UnknownAlert {...commonProps} />;
   }
@@ -56,7 +59,8 @@ const timeOk = (timestamp: number) => timestamp > 1550000000;
 
 const AlertCardTemplate = (props: AlertCardTemplateProps) => {
   const { alert, findApiAlertById, dispatch } = props;
-  return <div className={`problem-alert ${props.className}`}>
+  return <div className={
+    `problem-alert ${props.className} priority-${props.alert.priority}`}>
     <div className="problem-alert-title">
       <i className={`fa fa-${props.iconName || "exclamation-triangle"}`} />
       <h3>{t(props.title)}</h3>
@@ -79,8 +83,8 @@ const ICON_LOOKUP: { [x: string]: string } = {
 };
 
 class BulletinAlert
-  extends React.Component<CommonAlertCardProps, BulletinAlertState> {
-  state: BulletinAlertState = { bulletin: undefined, no_content: false };
+  extends React.Component<CommonAlertCardProps, BulletinAlertComponentState> {
+  state: BulletinAlertComponentState = { bulletin: undefined, no_content: false };
 
   componentDidMount() {
     fetchBulletinContent(this.props.alert.slug)
@@ -133,16 +137,6 @@ const UnknownAlert = (props: CommonAlertCardProps) => {
     dispatch={props.dispatch}
     findApiAlertById={props.findApiAlertById} />;
 };
-
-const FIRMWARE_CHOICES: DropDownItem[] = [
-  { label: "Arduino/RAMPS (Genesis v1.2)", value: "arduino" },
-  { label: "Farmduino (Genesis v1.3)", value: "farmduino" },
-  { label: "Farmduino (Genesis v1.4)", value: "farmduino_k14" },
-  { label: "Farmduino (Express v1.0)", value: "express_k10" },
-];
-
-const FIRMWARE_CHOICES_DDI: { [x: string]: DropDownItem } = {};
-FIRMWARE_CHOICES.map(x => FIRMWARE_CHOICES_DDI[x.value] = x);
 
 const FirmwareChoiceTable = () =>
   <table className="firmware-hardware-choice-table">
@@ -201,11 +195,13 @@ const FirmwareMissing = (props: FirmwareMissingProps) =>
       <Col xs={5}>
         <FBSelect
           key={props.apiFirmwareValue}
-          list={FIRMWARE_CHOICES}
-          selectedItem={FIRMWARE_CHOICES_DDI[props.apiFirmwareValue || "arduino"]}
+          list={getFirmwareChoices()}
+          customNullLabel={t("Select one")}
+          selectedItem={props.apiFirmwareValue
+            ? FIRMWARE_CHOICES_DDI[props.apiFirmwareValue] : undefined}
           onChange={changeFirmwareHardware(props.dispatch)} />
       </Col>
-      <Col xs={3}>
+      <Col xs={3} hidden={true}>
         <FlashFirmwareBtn
           apiFirmwareValue={props.apiFirmwareValue}
           botOnline={true} />
@@ -318,5 +314,35 @@ const DocumentationUnread = (props: CommonAlertCardProps) =>
       href={docLink()} target="_blank"
       title={t("Open documentation in a new tab")}>
       {t("Read the docs")}
+    </a>
+  </AlertCardTemplate>;
+
+const DemoAccount = (props: CommonAlertCardProps) =>
+  <AlertCardTemplate
+    alert={props.alert}
+    className={"demo-account-alert"}
+    title={t("You're currently using a demo account")}
+    message={t(Content.DEMO_ACCOUNT)}
+    timeSettings={props.timeSettings}
+    dispatch={props.dispatch}
+    findApiAlertById={props.findApiAlertById}
+    iconName={"info-circle"}>
+    <p>
+      <i>{t("Please note:")}</i>&nbsp;
+      {t(Content.DEMO_NOTE)}
+    </p>
+    <p>
+      {t(Content.MAKE_A_REAL_ACCOUNT)}&nbsp;
+      <a href={"https://my.farm.bot"} target="_blank"
+        onClick={() => Session.clear()}
+        title={"my.farm.bot"}>
+        {"my.farm.bot"}
+      </a>.
+    </p>
+    <a className="link-button fb-button green"
+      href={"https://my.farm.bot"} target="_blank"
+      onClick={() => Session.clear()}
+      title={t("Make a real account")}>
+      {t("Make a real account")}
     </a>
   </AlertCardTemplate>;

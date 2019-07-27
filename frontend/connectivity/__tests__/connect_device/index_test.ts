@@ -33,7 +33,6 @@ import { onLogs } from "../../log_handlers";
 import { Actions, Content } from "../../../constants";
 import { Log } from "farmbot/dist/resources/api_resources";
 import { ALLOWED_CHANNEL_NAMES, ALLOWED_MESSAGE_TYPES, Farmbot } from "farmbot";
-import { success, error, info, warning } from "farmbot-toastr";
 import { dispatchNetworkUp, dispatchNetworkDown } from "../../index";
 import { getDevice } from "../../../device";
 import { fakeState } from "../../../__test_support__/fake_state";
@@ -41,6 +40,7 @@ import { talk } from "browser-speech";
 import { globalQueue } from "../../batch_queue";
 import { MessageType } from "../../../sequences/interfaces";
 import { FbjsEventName } from "farmbot/dist/constants";
+import { info, error, success, warning, fun, busy } from "../../../toast/toast";
 
 const A_STRING = expect.any(String);
 describe("readStatus()", () => {
@@ -89,21 +89,32 @@ describe("showLogOnScreen", () => {
   function assertToastr(types: ALLOWED_MESSAGE_TYPES[], toastr: Function) {
     jest.resetAllMocks();
     types.map((x) => {
-      const fun = fakeLog(x, ["toast"]);
-      showLogOnScreen(fun);
-      expect(toastr).toHaveBeenCalledWith(fun.message, TITLE);
+      const log = fakeLog(x, ["toast"]);
+      showLogOnScreen(log);
+      expect(toastr).toHaveBeenCalledWith(log.message, TITLE());
     });
   }
 
-  it("routes `fun`, `info` and all others to toastr.info()", () => {
+  it("routes `info` and all others to toastr.info()", () => {
     assertToastr([
-      MessageType.fun,
       MessageType.info,
       ("FOO" as ALLOWED_MESSAGE_TYPES)], info);
   });
 
-  it("routes `busy`, `warn` and `error` to toastr.error()", () => {
-    assertToastr([MessageType.busy, MessageType.warn, MessageType.error], error);
+  it("routes `error` to toastr.error()", () => {
+    assertToastr([MessageType.error], error);
+  });
+
+  it("routes `warn` to toastr.warning()", () => {
+    assertToastr([MessageType.warn], warning);
+  });
+
+  it("routes `busy` to toastr.busy()", () => {
+    assertToastr([MessageType.busy], busy);
+  });
+
+  it("routes `fun` to toastr.fun()", () => {
+    assertToastr([MessageType.fun], fun);
   });
 
   it("routes `success` to toastr.success()", () => {
@@ -160,7 +171,7 @@ describe("onOffline", () => {
     jest.resetAllMocks();
     onOffline();
     expect(dispatchNetworkDown).toHaveBeenCalledWith("user.mqtt", undefined, A_STRING);
-    expect(error).toHaveBeenCalledWith(Content.MQTT_DISCONNECTED, "Error");
+    expect(error).toHaveBeenCalledWith(Content.MQTT_DISCONNECTED);
   });
 });
 
@@ -174,8 +185,8 @@ describe("onOnline", () => {
 
 describe("onReconnect", () => {
   onReconnect();
-  expect(warning)
-    .toHaveBeenCalledWith("Attempting to reconnect to the message broker", "Offline");
+  expect(warning).toHaveBeenCalledWith(
+    "Attempting to reconnect to the message broker", "Offline", "yellow");
 });
 
 describe("changeLastClientConnected", () => {

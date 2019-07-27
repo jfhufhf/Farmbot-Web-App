@@ -26,9 +26,9 @@ describe NervesHub do
   end
 
   it "generates URL paths" do
-    expect(NervesHub.devices_path).to eq "/orgs/farmbot/devices"
-    expect(NervesHub.device_path("foo")).to eq "/orgs/farmbot/devices/foo"
-    expect(NervesHub.device_sign_path(123)).to eq "/orgs/farmbot/devices/123/certificates/sign"
+    expect(NervesHub.devices_path).to eq "/orgs/farmbot/products/farmbot/devices"
+    expect(NervesHub.device_path("foo")).to eq "/orgs/farmbot/products/farmbot/devices/foo"
+    expect(NervesHub.device_sign_path(123)).to eq "/orgs/farmbot/products/farmbot/devices/123/certificates/sign"
   end
 
   it "gets a device via .device" do
@@ -83,11 +83,11 @@ describe NervesHub do
 
   it "calls `new_device` if device does not exist" do
     expect(NervesHub.conn)
-    xpect_args = "/orgs/farmbot/devices/X"
+    xpect_args = "/orgs/farmbot/products/farmbot/devices/X"
     resp = StubResp.new("404", { "data" => {} }.to_json)
     expect(NervesHub.conn).to receive(:get).with(xpect_args).and_return(resp)
     tags = ["A:B", "C:D"]
-    xpect_args2 = ["/orgs/farmbot/devices",
+    xpect_args2 = ["/orgs/farmbot/products/farmbot/devices",
                    { "description": "farmbot-X",
                      "identifier": "X",
                      "tags": tags }.to_json,
@@ -105,21 +105,5 @@ describe NervesHub do
       expect(result).to eq(NervesHub::NERVES_HUB_CA_HACK)
       expect(File.read(NervesHub::NERVES_HUB_CA_HACK)).to eq(pem)
     end
-  end
-
-  it "detects malformed tags" do
-    tags = ["wrong", "also_wrong", "ok:tag"].shuffle
-    serial_number = "0xCAFEF00D"
-    expected = { error: NervesHub::BAD_TAG,
-                 serial_number: serial_number,
-                 tags: tags }
-    resp = StubResp.new("200", {
-      "data" => { hello: :world, identifier: "?" },
-    }.to_json)
-    do_it =
-      receive(:get).with("/orgs/farmbot/devices/#{serial_number}").and_return(resp)
-    expect(NervesHub.conn).to do_it
-    expect(NervesHub).to receive(:report_problem).with(expected)
-    NervesHub.maybe_create_or_update(serial_number, tags)
   end
 end

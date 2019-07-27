@@ -5,6 +5,44 @@ module Api
   # Any other response results in denial.
   # Results are cached for 10 minutes to prevent too many requests to the API.
   class RmqUtilsController < Api::AbstractController
+    class BrokerConnectionLimiter
+      attr_reader :cache
+
+      CACHE_KEY_TPL = "mqtt_limiter:%s"
+      TTL = 60 * 5 # Five Minutes
+      PER_DEVICE_MAX = 20
+      MAX_GUEST_COUNT = 256
+      WARNING = "'%s' was rate limited."
+
+      class RateLimit < StandardError; end
+
+      def self.current(cache = Rails.cache.redis)
+        self.new(cache)
+      end
+
+      def initialize(cache)
+        @cache = cache
+      end
+
+      def maybe_continue(username)
+        is_guest = (username == FARMBOT_DEMO_USER)
+        max = is_guest ? MAX_GUEST_COUNT : PER_DEVICE_MAX
+        key = CACHE_KEY_TPL % username
+        total = (cache.get(key) || "0").to_i
+        needs_ttl = cache.ttl(key) < 1
+        if total < max
+          cache.incr(key)
+          cache.expire(key, TTL) if needs_ttl
+          yield
+        else
+          Device
+            .delay
+            .connection_warning(username) if !is_guest
+          raise RateLimit, username
+        end
+      end
+    end
+
     # List of AMQP/MQTT topics we support in the following format:
     # "bot.device_123.<MAIN TOPIC HERE>"
     BOT_CHANNELS = %w(
@@ -34,10 +72,13 @@ module Api
     VHOST = ENV.fetch("MQTT_VHOST") { "/" }
     RESOURCES = ["queue", "exchange"]
     PERMISSIONS = ["configure", "read", "write"]
+    FARMBOT_DEMO_USER = "farmbot_demo"
+    DEMO_REGISTRY_ROOT = "demos"
 
     class PasswordFailure < Exception; end
 
     rescue_from PasswordFailure, with: :report_suspicious_behavior
+    rescue_from BrokerConnectionLimiter::RateLimit, with: :deny
 
     skip_before_action :check_fbos_version, except: []
     skip_before_action :authenticate_user!, except: []
@@ -51,10 +92,17 @@ module Api
       #   "vhost"     => "/",
       #   "client_id" => "MQTT_FX_Client",
       case username_param
+      # NOTE: "guest" is not the same as
+      #       "farmbot_demo". We intentionally
+      #       differentiate to avoid accidental
+      #       security issues. -RC
       when "guest" then deny
       when "admin" then authenticate_admin
+      when FARMBOT_DEMO_USER
+        with_rate_limit { allow }
       else
-        device_id_in_username == current_device.id ? allow : deny
+        is_ok = device_id_in_username == current_device.id
+        is_ok ? (with_rate_limit { allow }) : deny
       end
     end
 
@@ -102,6 +150,10 @@ module Api
       allow if admin?
     end
 
+    def farmbot_demo?
+      username_param == FARMBOT_DEMO_USER
+    end
+
     def admin?
       username_param == "admin"
     end
@@ -136,35 +188,73 @@ module Api
     end
 
     def username_param
-      @username ||= params["username"]
+      @username ||= params.fetch("username")
     end
 
     def password_param
-      @password ||= params["password"]
+      @password ||= params.fetch("password")
     end
 
     def routing_key_param
-      @routing_key ||= params["routing_key"]
+      @routing_key ||= params.fetch("routing_key")
     end
 
     def vhost_param
-      @vhost ||= params["vhost"]
+      @vhost ||= params.fetch("vhost")
     end
 
     def resource_param
-      @resource ||= params["resource"]
+      @resource ||= params.fetch("resource")
     end
 
     def permission_param
-      @permission ||= params["permission"]
+      @permission ||= params.fetch("permission")
     end
 
     def if_topic_is_safe
+      if farmbot_demo?
+        a, b, c = (routing_key_param || "").split(".")
+
+        if !(permission_param == "read")
+          deny
+          return
+        end
+
+        if !(a == DEMO_REGISTRY_ROOT)
+          deny
+          return
+        end
+
+        if b.nil?
+          deny
+          return
+        end
+
+        if b.include?("*")
+          deny
+          return
+        end
+
+        if b.include?("#")
+          deny
+          return
+        end
+
+        if c.present?
+          deny
+          return
+        end
+
+        yield
+        return
+      end
+
       if !!DEVICE_SPECIFIC_CHANNELS.match(routing_key_param)
         yield
-      else
-        render json: MALFORMED_TOPIC, status: 422
+        return
       end
+
+      render json: MALFORMED_TOPIC, status: 422
     end
 
     def device_id_in_topic
@@ -173,6 +263,12 @@ module Api
         .split(".") # ["9", "logs"]
         .first # "9"
         .to_i || 0 # 9
+    end
+
+    def with_rate_limit
+      BrokerConnectionLimiter
+        .current
+        .maybe_continue(username_param) { yield }
     end
 
     def current_device

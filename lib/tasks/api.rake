@@ -51,28 +51,45 @@ namespace :api do
   end
 
   def parcel(cmd, opts = " ")
-    intro = ["node_modules/parcel-bundler/bin/cli.js",
-             cmd,
-             DashboardController::PARCEL_ASSET_LIST,
-             "--out-dir",
-             DashboardController::PUBLIC_OUTPUT_DIR,
-             "--public-url",
-             DashboardController::OUTPUT_URL].join(" ")
+    intro = [
+      "NODE_ENV=#{Rails.env}",
+      "node_modules/parcel-bundler/bin/cli.js",
+      cmd,
+      DashboardController::PARCEL_ASSET_LIST,
+      "--out-dir",
+      DashboardController::PUBLIC_OUTPUT_DIR,
+      "--public-url",
+      DashboardController::OUTPUT_URL,
+    ].join(" ")
     sh [intro, opts].join(" ")
+  end
+
+  def clean_assets
+    # Clear out cache and previous builds on initial load.
+    sh [
+      "rm -rf",
+      DashboardController::CACHE_DIR,
+      DashboardController::PUBLIC_OUTPUT_DIR,
+    ].join(" ") unless ENV["NO_CLEAN"]
   end
 
   desc "Serve javascript assets (via Parcel bundler)."
   task serve_assets: :environment do
-    # Clear out cache and previous builds on initial load.
-    sh ["rm -rf",
-        DashboardController::CACHE_DIR,
-        DashboardController::PUBLIC_OUTPUT_DIR].join(" ")
+    clean_assets
     parcel "watch", DashboardController::PARCEL_HMR_OPTS
   end
 
   desc "Don't call this directly. Use `rake assets:precompile`."
   task parcel_compile: :environment do
     parcel "build"
+  end
+
+  desc "Clean out old demo accounts"
+  task clean_demo_accounts: :environment do
+    User
+      .where("email ILIKE '%@farmbot.guest%'")
+      .where("updated_at < ?", 1.hour.ago)
+      .destroy_all
   end
 
   desc "Reset _everything_, including your database"

@@ -3,6 +3,9 @@ import moment from "moment";
 import { StatusRowProps } from "./connectivity_row";
 import { ConnectionStatus } from "../../connectivity/interfaces";
 import { t } from "../../i18next_wrapper";
+import {
+  getBoardCategory, isKnownBoard
+} from "../components/firmware_hardware_support";
 
 const HOUR = 1000 * 60 * 60;
 
@@ -27,8 +30,8 @@ export function botToAPI(stat: string | undefined,
 
   return {
     connectionName: "botAPI",
-    from: t("FarmBot"),
-    to: t("Web App"),
+    from: "FarmBot",
+    to: "Web App",
     connectionStatus: stat ? (now.diff(moment(stat)) < SIX_HOURS) : false,
     children: stat ? t("Last message seen ") + `${ago(stat)}.` : NOT_SEEN
   };
@@ -37,7 +40,7 @@ export function botToAPI(stat: string | undefined,
 export function botToMQTT(stat: ConnectionStatus | undefined): StatusRowProps {
   return {
     connectionName: "botMQTT",
-    from: t("FarmBot"),
+    from: "FarmBot",
     to: t("Message Broker"),
     connectionStatus: statusOf(stat),
     children: (stat && stat.state === "up")
@@ -59,9 +62,8 @@ export function browserToMQTT(status:
 }
 
 export function botToFirmware(version: string | undefined): StatusRowProps {
-  const boardIdentifier = version ? version.slice(-1) : "undefined";
   const connection = (): { status: boolean | undefined, msg: string } => {
-    const status = ["R", "F", "G", "E"].includes(boardIdentifier);
+    const status = isKnownBoard(version);
     if (isUndefined(version)) {
       return { status: undefined, msg: t("Unknown.") };
     }
@@ -73,8 +75,8 @@ export function botToFirmware(version: string | undefined): StatusRowProps {
   };
   return {
     connectionName: "botFirmware",
-    from: t("Raspberry Pi"),
-    to: ["F", "G", "E"].includes(boardIdentifier) ? "Farmduino" : "Arduino",
+    from: "Raspberry Pi",
+    to: getBoardCategory(version),
     children: connection().msg,
     connectionStatus: connection().status
   };

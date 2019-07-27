@@ -28,6 +28,7 @@ import {
 } from "../config_storage/actions";
 import { BooleanSetting } from "../session_keys";
 import { BooleanConfigKey } from "farmbot/dist/resources/configs/web_app";
+import { isUndefined } from "lodash";
 
 export const onDrop =
   (dispatch1: Function, sequence: TaggedSequence) =>
@@ -55,16 +56,21 @@ export interface SequenceSettingsMenuProps {
   getWebAppConfigValue: GetWebAppConfigValue;
 }
 
-interface SettingProps {
+export interface SequenceSettingProps {
   label: string;
   description: string;
   dispatch: Function;
   setting: BooleanConfigKey;
   getWebAppConfigValue: GetWebAppConfigValue;
+  confirmation?: string;
+  defaultOn?: boolean;
 }
 
-const Setting = (props: SettingProps) => {
-  const value = !!props.getWebAppConfigValue(props.setting);
+export const SequenceSetting = (props: SequenceSettingProps) => {
+  const raw_value = props.getWebAppConfigValue(props.setting);
+  const value = (props.defaultOn && isUndefined(raw_value)) ? true : !!raw_value;
+  const proceed = () =>
+    (props.confirmation && !value) ? confirm(t(props.confirmation)) : true;
   return <fieldset>
     <label>
       {t(props.label)}
@@ -72,7 +78,7 @@ const Setting = (props: SettingProps) => {
     <Help text={t(props.description)} requireClick={true} />
     <ToggleButton
       toggleValue={value}
-      toggleAction={() =>
+      toggleAction={() => proceed() &&
         props.dispatch(setWebAppConfigValue(props.setting, !value))} />
   </fieldset>;
 };
@@ -81,18 +87,28 @@ export const SequenceSettingsMenu =
   ({ dispatch, getWebAppConfigValue }: SequenceSettingsMenuProps) => {
     const commonProps = { dispatch, getWebAppConfigValue };
     return <div className="sequence-settings-menu">
-      <Setting {...commonProps}
+      <SequenceSetting {...commonProps}
         setting={BooleanSetting.confirm_step_deletion}
         label={t("Confirm step deletion")}
         description={Content.CONFIRM_STEP_DELETION} />
-      <Setting {...commonProps}
+      <SequenceSetting {...commonProps}
+        setting={BooleanSetting.confirm_sequence_deletion}
+        defaultOn={true}
+        label={t("Confirm sequence deletion")}
+        description={Content.CONFIRM_SEQUENCE_DELETION} />
+      <SequenceSetting {...commonProps}
         setting={BooleanSetting.show_pins}
         label={t("Show pins")}
         description={Content.SHOW_PINS} />
-      <Setting {...commonProps}
+      <SequenceSetting {...commonProps}
         setting={BooleanSetting.expand_step_options}
         label={t("Open options by default")}
         description={Content.EXPAND_STEP_OPTIONS} />
+      <SequenceSetting {...commonProps}
+        setting={BooleanSetting.discard_unsaved_sequences}
+        confirmation={Content.DISCARD_UNSAVED_SEQUENCE_CHANGES_CONFIRM}
+        label={t("Discard unsaved sequence changes")}
+        description={Content.DISCARD_UNSAVED_SEQUENCE_CHANGES} />
     </div>;
   };
 
@@ -122,8 +138,13 @@ const SequenceBtnGroup = ({
       dispatch={dispatch} />
     <button
       className="fb-button red"
-      onClick={() => dispatch(destroy(sequence.uuid))
-        .then(() => push("/app/sequences/"))}>
+      onClick={() => {
+        const confirm = getWebAppConfigValue(
+          BooleanSetting.confirm_sequence_deletion);
+        const force = isUndefined(confirm) ? false : !confirm;
+        dispatch(destroy(sequence.uuid, force))
+          .then(() => push("/app/sequences/"));
+      }}>
       {t("Delete")}
     </button>
     <button

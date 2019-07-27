@@ -2,7 +2,7 @@
 ///主架构
 import * as React from "react";
 import { connect } from "react-redux";
-import { init, error } from "farmbot-toastr";
+import { init, error } from "./toast/toast";
 import { NavBar } from "./nav";
 import { Everything, TimeSettings } from "./interfaces";
 import { LoadingPlant } from "./loading_plant";               //二层loading
@@ -30,7 +30,7 @@ import { t } from "./i18next_wrapper";
 import { ResourceIndex } from "./resources/interfaces";
 import { isBotOnline } from "./devices/must_be_online";
 import { getStatus } from "./connectivity/reducer_support";
-import { getAlerts } from "./messages/state_to_props";
+import { getAllAlerts } from "./messages/state_to_props";
 
 /** For the logger module */
 init();
@@ -77,7 +77,7 @@ export function mapStateToProps(props: Everything): AppProps {
     tour: props.resources.consumers.help.currentTour,
     resources: props.resources.index,
     autoSync: !!(fbosConfig && fbosConfig.auto_sync),
-    alertCount: getAlerts(props.resources.index, props.bot).length,
+    alertCount: getAllAlerts(props.resources).length,
   };
 }
 /** Time at which the app gives up and asks the user to refresh */

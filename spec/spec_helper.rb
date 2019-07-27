@@ -23,8 +23,8 @@ require File.expand_path("../../config/environment", __FILE__)
 # AMQP for real.
 class FakeTransport < Transport
   # Theses are the "real" I/O inducing methods that must be Stubbed out.
-  MOCKED_METHODS =
-    [:bind, :publish, :queue, :subscribe, :create_channel, :topic]
+  MOCKED_METHODS = [:bind, :create_channel, :publish, :queue,
+                    :send_demo_token_to, :subscribe, :topic]
 
   # When you call an AMQP I/O method, instead of doing real I/O, it will deposit
   # the call into the @calls dictionary for observation.
@@ -103,8 +103,8 @@ RSpec.configure do |config|
   end
 end
 
-FAKE_ATTACHMENT_URL = "https://cdn.shopify.com/s/files/1/2040/0"\
-                      "289/files/FarmBot.io_Trimmed_Logo_Gray_o"\
+FAKE_ATTACHMENT_URL = "https://cdn.shopify.com/s/files/1/2040/0" \
+                      "289/files/FarmBot.io_Trimmed_Logo_Gray_o" \
                       "n_Transparent_1_434x200.png?v=1525220371"
 
 def run_jobs_now
@@ -117,8 +117,14 @@ end
 # Reassign constants without getting a bunch of warnings to STDOUT.
 # This is just for testing purposes, so NBD.
 def const_reassign(target, const, value)
+  b4 = target.const_get(const)
   target.send(:remove_const, const)
   target.const_set(const, value)
+  if block_given?
+    yield
+    target.send(:remove_const, const)
+    target.const_set(const, b4)
+  end
 end
 
 class StubResp

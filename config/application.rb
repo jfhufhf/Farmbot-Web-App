@@ -12,6 +12,10 @@ module FarmBot
     Delayed::Worker.max_attempts = 4
     REDIS_ENV_KEY = ENV.fetch("WHERE_IS_REDIS_URL", "REDIS_URL")
     REDIS_URL = ENV.fetch(REDIS_ENV_KEY, "redis://redis:6379/0")
+    gcs_enabled =
+      %w[ GOOGLE_CLOUD_KEYFILE_JSON GCS_PROJECT GCS_BUCKET ].all? { |s| ENV.key? s }
+    config.active_storage.service = gcs_enabled ?
+      :google : :local
     config.cache_store = :redis_cache_store, { url: REDIS_URL }
     config.middleware.use Rack::Attack
     config.active_record.schema_format = :sql
@@ -49,15 +53,13 @@ module FarmBot
     SecureHeaders::Configuration.default do |config|
       config.hsts = "max-age=#{1.week.to_i}"
       # We need this off in dev mode otherwise email previews won't show up.
-      config.x_frame_options = "DENY" if Rails.env.production?
+      config.x_frame_options = "ALLOW-FROM https://farm.bot" # For marketing demos
       config.x_content_type_options = "nosniff"
       config.x_xss_protection = "1; mode=block"
       config.x_download_options = "noopen"
       config.x_permitted_cross_domain_policies = "none"
-      config.referrer_policy = %w(
-        origin-when-cross-origin
-        strict-origin-when-cross-origin
-      )
+      config.referrer_policy =
+        %w(origin-when-cross-origin strict-origin-when-cross-origin)
       connect_src = ALL_LOCAL_URIS + [
         ENV["MQTT_HOST"],
         "api.github.com",
