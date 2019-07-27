@@ -1,4 +1,5 @@
 import * as React from "react";
+import { t } from "../i18next_wrapper";
 
 interface WidgetBodyProps {
   children?: React.ReactNode;
@@ -6,6 +7,6 @@ interface WidgetBodyProps {
 
 export function WidgetBody(props: WidgetBodyProps) {
   return <div className="widget-body">
-    {props.children}
+    {t(props.children)}
   </div>;
 }

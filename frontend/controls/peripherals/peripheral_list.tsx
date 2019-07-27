@@ -14,7 +14,6 @@ export const PeripheralList = (props: PeripheralListProps) =>
         value={"" + p.body.pin}
         toggleValue={(props.pins[p.body.pin || -1] || { value: undefined }).value}
         valuePlaceholder=""
-        title={t(`Toggle ${p.body.label}`)}
         onClick={() => p.body.pin && pinToggle(p.body.pin)}
         disabled={!!props.disabled} />)}
   </div>;
