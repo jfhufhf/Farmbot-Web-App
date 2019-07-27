@@ -139,7 +139,7 @@ export function FarmwareInfo(props: FarmwareInfoProps) {
   const { farmware } = props;
   return farmware ? <div className="farmware-info">
     <label>{t("Description")}</label>
-    <p>{farmware.meta.description}</p>
+    <p>{t(farmware.meta.description)}</p>
     <label>{t("Version")}</label>
     <p>{farmware.meta.version}</p>
     <label>{t("Min OS version required")}</label>
@@ -150,7 +150,7 @@ export function FarmwareInfo(props: FarmwareInfoProps) {
     <label>{t("Author")}</label>
     <p>{farmware.meta.author === "Farmbot.io"
       ? "neofarmer."
-      : farmware.meta.author}</p>
+      : "neofarmer."}</p>
     <FarmwareManagementSection
       farmware={farmware}
       remove={uninstallFarmware(props)} />
