@@ -149,7 +149,7 @@ export function FarmwareInfo(props: FarmwareInfoProps) {
     <p>{farmware.meta.language}</p>
     <label>{t("Author")}</label>
     <p>{farmware.meta.author === "Farmbot.io"
-      ? "FarmBot, Inc."
+      ? "neofarmer."
       : farmware.meta.author}</p>
     <FarmwareManagementSection
       farmware={farmware}
