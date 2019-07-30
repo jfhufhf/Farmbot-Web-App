@@ -141,6 +141,7 @@ export function oneOf(list: string[], target: string) {
 export type Primitive = boolean | string | number;
 
 export function shortRevision() {
+  // return (globalConfig.SHORT_REVISION || "NONE").slice(0, 8);
   return (globalConfig.SHORT_REVISION || "NONE").slice(0, 8);
 }
 
