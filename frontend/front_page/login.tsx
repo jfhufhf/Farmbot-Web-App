@@ -13,6 +13,7 @@ import { BlurablePassword } from "../ui/blurable_password";
 import { t } from "../i18next_wrapper";
 import { updatePageInfo } from "../util";
 
+
 export interface LoginProps {
   /** Attributes */
   email: string | undefined;
@@ -34,6 +35,8 @@ export class Login extends React.Component<LoginProps, {}> {
 
   /** CSS to hide the fake input field used to change focus. */
   HIDE_ME = { background: "transparent", border: "none", display: "node" };
+  
+  
 
   render() {
     const {

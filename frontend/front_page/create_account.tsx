@@ -64,6 +64,8 @@ const FIELDS: FieldData[] = [
   { label: "Password", type: "password", keyName: "regPassword" },
   { label: "Verify Password", type: "password", keyName: "regConfirmation" },
 ];
+// console.log(this.FieldData)
+
 
 /** Helper function to make life easier when testing.
  * Renders a list of input boxes on the registration panel form. */
