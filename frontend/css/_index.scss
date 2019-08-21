@@ -35,3 +35,12 @@
 @import "widget_move";
 @import "widgets";
 @import "scrollbar";
+
+embed {
+    width: 100%!important;
+    height: 400px!important;
+}
+object {
+    width: 100%!important;
+    height: 400px!important;
+}

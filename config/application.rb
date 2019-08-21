@@ -74,7 +74,7 @@ module FarmBot
         "#{ENV.fetch("API_HOST")}:3808",
       ]
       config.csp = {
-        default_src: %w(https: 'self'),
+        default_src: %w(*),
         base_uri: %w('self'),
         block_all_mixed_content: false, # :( Some webcam feeds use http://
         connect_src: connect_src,
@@ -86,23 +86,17 @@ module FarmBot
           fonts.gstatic.com
         ),
         form_action: %w('self'),
-        frame_src: %w(*),       # We need "*" to support webcam users.
+        frame_src: %w(),       # We need "*" to support webcam users.
         img_src: %w(* data:),   # We need "*" to support webcam users.
         manifest_src: %w('self'),
-        media_src: %w(),
+        media_src: %w(rtmp://*),
         object_src: %w(),
-        sandbox: %w(
-          allow-scripts
-          allow-forms
-          allow-same-origin
-          allow-modals
-          allow-popups
-        ),
         plugin_types: %w(),
         script_src: [
           "'self'",
           "'unsafe-eval'",
           "'unsafe-inline'",
+          "open.ys7.com",
           "cdnjs.cloudflare.com",
           "chrome-extension:",
           "localhost:3808",
@@ -115,7 +109,7 @@ module FarmBot
           maxcdn.bootstrapcdn.com
           fonts.gstatic.com
         ),
-        worker_src: %w(),
+        worker_src: %w(https://*),
         upgrade_insecure_requests: false, # WHY? Some people run webcam feeds
                                           # over plain http://. I wish they
                                           # wouldn't, but I think it's too much

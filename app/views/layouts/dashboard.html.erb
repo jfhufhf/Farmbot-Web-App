@@ -20,11 +20,19 @@
       /** ALWAYS LOAD THAT FIRST!!! ^ */
       window.process = { env: { NODE_ENV: <%= raw(Rails.env.inspect) %> } }
     </script>
+    <script src="https://open.ys7.com/sdk/js/2.0/ezuikit.js" type="text/javascript" ></script>
     <%= render "addons" %>
     <%= yield :head %>
   </head>
   <body>
     <%= yield %>
     <%= javascript_include_tag *@js_assets %>
+    <script>
+      window.onload = function() {
+        setTimeout(function(){
+          new EZuikit.EZUIPlayer('myPlayer');
+        },2000)
+      }
+    </script>
   </body>
 </html>

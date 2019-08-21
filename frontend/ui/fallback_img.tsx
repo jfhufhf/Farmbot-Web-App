@@ -41,9 +41,9 @@ export class FallbackImg extends React.Component<Props, State> {
         case "iframe":
           return <iframe src={splitSrc[1]} />;
         default:
-          return <video id="myPlayer" controls playsInline webkit-playsinline autoplay width="100%">  
-            <source src="rtmp://rtmp01open.ys7.com/openlive/b49a95384255423c8076fee999945089.hd" type="rtmp/flv" />  
-          </video>;
+          return<video id="myPlayer" controls playsInline webkit-playsinline autoplay width="100%" >
+					  <source src="rtmp://rtmp01open.ys7.com/openlive/b49a95384255423c8076fee999945089.hd"/>
+				</video>
       }
     };
     return <div className="webcam-stream-valid">
